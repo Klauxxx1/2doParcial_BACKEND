@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./django_proyect:/app
+    working_dir: /app
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - db
+    expose:
+      - "8000"  # Exponemos el puerto 8000 al contenedor NGINX, pero no al host
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mi_basedatos
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: contrasena
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Configuración de NGINX
+      - ./nginx/certs:/etc/nginx/certs  # Certificados SSL
+      - ./django_proyect:/app  # Proyecto Django
+    ports:
+      - "443:443"  # Exponer el puerto HTTPS
+      - "80:80"    # Exponer el puerto HTTP para redirigir a HTTPS
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
